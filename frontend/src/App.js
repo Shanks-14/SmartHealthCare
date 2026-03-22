@@ -8,6 +8,7 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 
 // Auth
 import Login from './pages/login';
+import Register from '../src/pages/Register';
 
 // Patient
 import PatientDashboard   from './pages/Patient/PatientDashboard';
@@ -36,6 +37,7 @@ function App() {
         <Routes>
           {/* Public */}
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/"      element={<Navigate to="/login" replace />} />
 
           {/* Patient */}

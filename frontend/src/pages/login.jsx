@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/common/Button';
+import Toast from '../components/common/Toast';
 
 const roleHome = {
   patient: '/patient/dashboard',
@@ -41,19 +42,54 @@ const Login = () => {
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState('');
 
+  // const [email, setEmail] = useState('sarah.murphy@gmail.com');
+  // const [password, setPassword] = useState('SecurePass123!');
+  // const [role, setRole] = useState('patient');
+  // const [loading, setLoading] = useState(false);
+  // const [toast, setToast] = useState(null);
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
       const response = await login(email, password, role);
-      const dest = roleHome[response.user?.role || role] || '/login';
-      navigate(dest, { replace: true });
+
+      // Special admin override (as per requirement)
+      if (email === 'admin@smartcare.com' && password === 'admin123') {
+        navigate('/admin/dashboard');
+      } else {
+
+        // Redirect based on role
+        switch (response.user?.role || role) {
+          case 'patient':
+            navigate('/patient/dashboard');
+            break;
+          case 'doctor':
+            navigate('/doctor/dashboard');
+            break;
+          case 'admin':
+            navigate('/admin/dashboard');
+            break;
+          default:
+            navigate('/patient/dashboard');
+        }
+      }
+    //   const dest = roleHome[response.user?.role || role] || '/login';
+    //   navigate(dest, { replace: true });
+    // } catch (err) {
+    //   setError(err.error || 'Login failed. Please check your credentials.');
+    // } finally {
+    //   setLoading(false);
+    // }
+      
+      setToast({ message: 'Login successful!', type: 'success' });
     } catch (err) {
-      setError(err.error || 'Login failed. Please check your credentials.');
+      setToast({ message: err.error || 'Login failed. Please try again.', type: 'error'});
     } finally {
       setLoading(false);
     }
+    };
   };
 
   // Pre-fill demo credentials (no real auto-login)
@@ -174,6 +210,19 @@ const Login = () => {
           </Button>
         </form>
 
+        {/* Register Link */}
+        <div className="mt-5 text-center">
+          <p className="text-sm text-gray-500">
+            Don't have an account?{' '}
+            <Link
+              to="/register"
+              className="text-teal-600 font-semibold hover:underline"
+            >
+              Create Account
+            </Link>
+          </p>
+        </div>
+
         {/* Demo prefill buttons */}
         <div className="mt-5 text-center">
           <p className="text-xs text-gray-400 mb-2">Quick demo logins (pre-fills credentials):</p>
@@ -193,8 +242,16 @@ const Login = () => {
           </div>
         </div>
       </div>
+
+      {/* Toast Notifications */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
-};
 
 export default Login;

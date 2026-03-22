@@ -1,6 +1,7 @@
 import api from './api';
 
 const authService = {
+  // Login User
   login: async (email, password, role) => {
     try {
       const response = await api.post('/auth/login', { email, password, role });
@@ -14,6 +15,7 @@ const authService = {
     }
   },
 
+  // Register new User
   register: async (userData) => {
     try {
       const response = await api.post('/auth/register', userData);
@@ -27,6 +29,7 @@ const authService = {
     }
   },
 
+  // Get User Data
   getCurrentUser: async () => {
     try {
       const response = await api.get('/auth/me');
@@ -36,6 +39,7 @@ const authService = {
     }
   },
 
+  // Change Password
   changePassword: async (currentPassword, newPassword) => {
     try {
       const response = await api.post('/auth/change-password', {
@@ -48,13 +52,16 @@ const authService = {
     }
   },
 
+  // Logout
   logout: () => {
     localStorage.removeItem('smartcare_token');
     localStorage.removeItem('smartcare_user');
   },
 
+  // Validating User Logged In
   isAuthenticated: () => !!localStorage.getItem('smartcare_token'),
 
+  // Getting Stored user
   getStoredUser: () => {
     const user = localStorage.getItem('smartcare_user');
     return user ? JSON.parse(user) : null;
