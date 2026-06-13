@@ -1,4 +1,3 @@
-// Convenience re-export so components can import from either location:
-//   import { useAuth } from '../hooks/useAuth'
-//   import { useAuth } from '../context/AuthContext'
-export { useAuth } from '../context/AuthContext';
+// Re-exports the hook from AuthContext for convenient imports
+// Usage: import useAuth from '../hooks/useAuth'
+export { useAuth as default } from '../context/AuthContext';

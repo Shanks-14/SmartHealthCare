@@ -1,33 +1,28 @@
 import React from 'react';
 
-/**
- * Usage:
- *   <LoadingSpinner />                  — centred fullscreen overlay
- *   <LoadingSpinner inline />           — small inline spinner
- *   <LoadingSpinner size="sm|md|lg" />
- */
-const sizeMap = {
-  sm: 'h-5 w-5 border-2',
-  md: 'h-10 w-10 border-2',
-  lg: 'h-14 w-14 border-4',
-};
+const LoadingSpinner = ({ size = 'md', color = 'teal', fullScreen = false }) => {
+  const sizes = { sm: 'h-6 w-6', md: 'h-10 w-10', lg: 'h-16 w-16' };
+  const colors = { teal: 'border-teal-500', gray: 'border-gray-500', white: 'border-white' };
 
-const LoadingSpinner = ({ inline = false, size = 'lg' }) => {
   const spinner = (
     <div
-      className={[
-        'rounded-full border-teal-500 border-t-transparent animate-spin',
-        sizeMap[size] || sizeMap.lg,
-      ].join(' ')}
-      role="status"
-      aria-label="Loading"
+      className={`animate-spin rounded-full border-b-2 ${sizes[size]} ${colors[color]}`}
     />
   );
 
-  if (inline) return spinner;
+  if (fullScreen) {
+    return (
+      <div className="fixed inset-0 bg-white/80 flex items-center justify-center z-50">
+        <div className="flex flex-col items-center gap-3">
+          {spinner}
+          <p className="text-sm text-gray-400">Loading…</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="fixed inset-0 bg-white/75 flex items-center justify-center z-50">
+    <div className="flex items-center justify-center p-4">
       {spinner}
     </div>
   );

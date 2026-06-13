@@ -1,23 +1,33 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import LoadingSpinner from './LoadingSpinner';
 
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
-  const { isAuthenticated, user, loading } = useAuth();
+  const { user, loading } = useAuth();
 
-  if (loading) return <LoadingSpinner />;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500" />
+          <p className="text-sm text-gray-400">Loading SmartCare…</p>
+        </div>
+      </div>
+    );
+  }
 
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  // Not logged in → go to login
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
 
-  if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
-    // Redirect to the correct dashboard for the user's actual role
-    const roleHome = {
-      patient: '/patient/dashboard',
-      doctor:  '/doctor/dashboard',
-      admin:   '/admin/dashboard',
-    };
-    return <Navigate to={roleHome[user?.role] || '/login'} replace />;
+  // Wrong role → redirect to their own dashboard
+  if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+    const fallback =
+      user.role === 'doctor' ? '/doctor/dashboard'
+      : user.role === 'admin'  ? '/admin/dashboard'
+      : '/patient/dashboard';
+    return <Navigate to={fallback} replace />;
   }
 
   return children;

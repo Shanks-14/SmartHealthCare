@@ -1,23 +1,23 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import authService from '../services/authService';
 
-const AuthContext = createContext(null);
+const AuthContext = createContext();
 
-export function useAuth() {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth must be used within AuthProvider');
   }
   return context;
-}
+};
 
-export function AuthProvider({ children }) {
-  const [user, setUser]       = useState(null);
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState(null);
+  const [error, setError] = useState(null);
 
-  // Restore session on mount
   useEffect(() => {
+    // Check if user is logged in on mount
     const storedUser = authService.getStoredUser();
     if (storedUser && authService.isAuthenticated()) {
       setUser(storedUser);
@@ -32,8 +32,7 @@ export function AuthProvider({ children }) {
       setUser(response.user);
       return response;
     } catch (err) {
-      const message = err.error || 'Login failed';
-      setError(message);
+      setError(err.error || 'Login failed');
       throw err;
     }
   };
@@ -45,8 +44,7 @@ export function AuthProvider({ children }) {
       setUser(response.user);
       return response;
     } catch (err) {
-      const message = err.error || 'Registration failed';
-      setError(message);
+      setError(err.error || 'Registration failed');
       throw err;
     }
   };
@@ -61,6 +59,9 @@ export function AuthProvider({ children }) {
     localStorage.setItem('smartcare_user', JSON.stringify(updatedUser));
   };
 
+  // BUG FIX: isAuthenticated was calling authService.isAuthenticated() at render time,
+  // which is a non-reactive snapshot. Derive it from 'user' state so components
+  // re-render correctly when auth state changes.
   const value = {
     user,
     loading,
@@ -69,11 +70,11 @@ export function AuthProvider({ children }) {
     register,
     logout,
     updateUser,
-    isAuthenticated: authService.isAuthenticated(),
+    isAuthenticated: !!user,
     isPatient: user?.role === 'patient',
-    isDoctor:  user?.role === 'doctor',
-    isAdmin:   user?.role === 'admin',
+    isDoctor: user?.role === 'doctor',
+    isAdmin: user?.role === 'admin',
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
+};

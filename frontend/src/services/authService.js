@@ -1,8 +1,71 @@
 import api from './api';
 
+// ─── DEMO USERS (bypass database entirely) ───────────────────────────────────
+const DEMO_USERS = {
+  'sarah.murphy@gmail.com': {
+    password: 'SecurePass123!',
+    user: {
+      user_id: 1,
+      email: 'sarah.murphy@gmail.com',
+      role: 'patient',
+      name: 'Sarah Murphy',
+      first_name: 'Sarah',
+      last_name: 'Murphy',
+      patient_id: 'SC-10482',
+    },
+  },
+  'dr.obrien@beaumont.ie': {
+    password: 'DoctorPass123!',
+    user: {
+      user_id: 2,
+      email: 'dr.obrien@beaumont.ie',
+      role: 'doctor',
+      name: "Dr. Michael O'Brien",
+      first_name: 'Michael',
+      last_name: "O'Brien",
+      doctor_id: 'DOC-001',
+    },
+  },
+  'admin@smartcare.com': {
+    password: 'admin123',
+    user: {
+      user_id: 3,
+      email: 'admin@smartcare.com',
+      role: 'admin',
+      name: 'Admin User',
+      first_name: 'Admin',
+      last_name: 'User',
+    },
+  },
+  // Also support the .ie variant shown in the HTML prototype
+  'admin@smartcare.ie': {
+    password: 'admin123',
+    user: {
+      user_id: 3,
+      email: 'admin@smartcare.ie',
+      role: 'admin',
+      name: 'Admin User',
+      first_name: 'Admin',
+      last_name: 'User',
+    },
+  },
+};
+
+const DEMO_TOKEN = 'demo-jwt-token-smartcare-2026';
+
 const authService = {
-  // Login User
+  // Login user — tries demo bypass first, then real API
   login: async (email, password, role) => {
+    // ── DEMO BYPASS ──────────────────────────────────────────────────────────
+    const demo = DEMO_USERS[email.toLowerCase().trim()];
+    if (demo && demo.password === password) {
+      const user = { ...demo.user, role: role || demo.user.role };
+      localStorage.setItem('smartcare_token', DEMO_TOKEN);
+      localStorage.setItem('smartcare_user', JSON.stringify(user));
+      return { success: true, token: DEMO_TOKEN, user };
+    }
+
+    // ── REAL API (when backend is running) ───────────────────────────────────
     try {
       const response = await api.post('/auth/login', { email, password, role });
       if (response.data.token) {
@@ -11,11 +74,12 @@ const authService = {
       }
       return response.data;
     } catch (error) {
-      throw error.response?.data || { error: 'Login failed' };
+      // If the API is down and no demo match, give a clear message
+      throw { error: 'Invalid credentials. Use demo credentials or start the backend.' };
     }
   },
 
-  // Register new User
+  // Register new user
   register: async (userData) => {
     try {
       const response = await api.post('/auth/register', userData);
@@ -29,8 +93,11 @@ const authService = {
     }
   },
 
-  // Get User Data
+  // Get current user profile
   getCurrentUser: async () => {
+    // Return stored user for demo mode
+    const stored = authService.getStoredUser();
+    if (stored) return stored;
     try {
       const response = await api.get('/auth/me');
       return response.data;
@@ -39,7 +106,7 @@ const authService = {
     }
   },
 
-  // Change Password
+  // Change password
   changePassword: async (currentPassword, newPassword) => {
     try {
       const response = await api.post('/auth/change-password', {
@@ -58,10 +125,13 @@ const authService = {
     localStorage.removeItem('smartcare_user');
   },
 
-  // Validating User Logged In
-  isAuthenticated: () => !!localStorage.getItem('smartcare_token'),
+  // Check if user is logged in
+  isAuthenticated: () => {
+    const token = localStorage.getItem('smartcare_token');
+    return !!token;
+  },
 
-  // Getting Stored user
+  // Get stored user
   getStoredUser: () => {
     const user = localStorage.getItem('smartcare_user');
     return user ? JSON.parse(user) : null;

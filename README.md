@@ -96,7 +96,8 @@ Backend runs on **http://localhost:3000**
 ```bash
 cd frontend
 npm install
-npm start
+# Start the React frontend only if needed
+npx react-scripts start
 ```
 
 Frontend runs on **http://localhost:3001**  
