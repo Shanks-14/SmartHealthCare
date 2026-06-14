@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { FaBell, FaBars } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
-import { getInitials } from '../../utils/helpers';
+import { initials } from '../../utils/helpers';
 
 const Header = ({ title, onMenuClick }) => {
   const { user } = useAuth();
@@ -43,7 +43,7 @@ const Header = ({ title, onMenuClick }) => {
         {/* User avatar */}
         <div className="w-8 h-8 rounded-lg bg-teal-500 flex items-center justify-center
           text-white text-xs font-bold select-none">
-          {getInitials(user?.name || 'U')}
+          {initials(user?.name || 'U')}
         </div>
       </div>
     </header>
