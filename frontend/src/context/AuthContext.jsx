@@ -5,9 +5,7 @@ const AuthContext = createContext();
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 };
 
@@ -17,7 +15,6 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Check if user is logged in on mount
     const storedUser = authService.getStoredUser();
     if (storedUser && authService.isAuthenticated()) {
       setUser(storedUser);
@@ -59,9 +56,6 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('smartcare_user', JSON.stringify(updatedUser));
   };
 
-  // BUG FIX: isAuthenticated was calling authService.isAuthenticated() at render time,
-  // which is a non-reactive snapshot. Derive it from 'user' state so components
-  // re-render correctly when auth state changes.
   const value = {
     user,
     loading,
@@ -70,6 +64,8 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateUser,
+    // FIX: was authService.isAuthenticated() — a non-reactive snapshot.
+    // Derived from 'user' state so components re-render correctly on login/logout.
     isAuthenticated: !!user,
     isPatient: user?.role === 'patient',
     isDoctor: user?.role === 'doctor',

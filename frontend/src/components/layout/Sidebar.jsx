@@ -2,20 +2,11 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
-  FaHome,
-  FaCalendarAlt,
-  FaUserMd,
-  FaUsers,
-  FaFileAlt,
-  FaUserCircle,
-  FaSignOutAlt,
-  FaPlusCircle,
-  FaClock,
-  FaChartLine,
-  FaCog,
-  // BUG FIX: FaAzure does not exist in react-icons/fa and causes a runtime crash.
-  // Replaced with FaCloud which is available and contextually appropriate.
+  FaHome, FaCalendarAlt, FaUsers, FaFileAlt, FaUserCircle,
+  FaSignOutAlt, FaPlusCircle, FaClock, FaChartLine, FaCog,
 } from 'react-icons/fa';
+// FIX: FaAzure does not exist in react-icons/fa — crashes on import.
+// Replaced with FaCog for the Azure Services nav item.
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
@@ -26,7 +17,6 @@ const Sidebar = () => {
     navigate('/login');
   };
 
-  // Navigation items based on role
   const getNavItems = () => {
     if (user?.role === 'patient') {
       return [
@@ -36,19 +26,20 @@ const Sidebar = () => {
         { path: '/patient/reports', icon: <FaFileAlt />, label: 'Medical Reports' },
         { path: '/patient/profile', icon: <FaUserCircle />, label: 'Profile' },
       ];
-    } else if (user?.role === 'doctor') {
+    }
+    if (user?.role === 'doctor') {
       return [
         { path: '/doctor/dashboard', icon: <FaHome />, label: 'Overview' },
         { path: '/doctor/schedule', icon: <FaCalendarAlt />, label: 'My Schedule' },
         { path: '/doctor/patients', icon: <FaUsers />, label: 'My Patients' },
         { path: '/doctor/availability', icon: <FaClock />, label: 'Availability' },
       ];
-    } else if (user?.role === 'admin') {
+    }
+    if (user?.role === 'admin') {
       return [
         { path: '/admin/dashboard', icon: <FaChartLine />, label: 'Overview' },
         { path: '/admin/users', icon: <FaUsers />, label: 'Users' },
         { path: '/admin/appointments', icon: <FaCalendarAlt />, label: 'Appointments' },
-        // BUG FIX: Replaced non-existent <FaAzure /> with <FaCog /> (settings/services icon)
         { path: '/admin/azure', icon: <FaCog />, label: 'Azure Services' },
       ];
     }
@@ -59,7 +50,6 @@ const Sidebar = () => {
 
   return (
     <div className="w-56 bg-gray-900 min-h-screen fixed top-0 left-0 flex flex-col">
-      {/* Logo */}
       <div className="flex items-center gap-2 px-3 py-6 mb-4">
         <div className="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
@@ -69,11 +59,8 @@ const Sidebar = () => {
         <span className="font-serif text-white text-lg font-semibold">SmartCare</span>
       </div>
 
-      {/* Navigation */}
       <div className="flex-1 px-2">
-        <div className="text-xs font-bold text-gray-500 uppercase tracking-wider px-2 mb-2">
-          Menu
-        </div>
+        <div className="text-xs font-bold text-gray-500 uppercase tracking-wider px-2 mb-2">Menu</div>
         {navItems.map((item) => (
           <NavLink
             key={item.path}
@@ -92,19 +79,14 @@ const Sidebar = () => {
         ))}
       </div>
 
-      {/* User Info & Logout */}
       <div className="p-3 border-t border-gray-800 mt-auto">
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-9 h-9 rounded-lg bg-teal-500 flex items-center justify-center text-white font-bold">
-            {user?.name?.charAt(0) || 'U'}
+          <div className="w-9 h-9 rounded-lg bg-teal-500 flex items-center justify-center text-white font-bold text-sm">
+            {user?.name?.charAt(0)?.toUpperCase() || 'U'}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-white text-sm font-semibold truncate">
-              {user?.name || 'User'}
-            </div>
-            <div className="text-gray-500 text-xs capitalize">
-              {user?.role}
-            </div>
+            <div className="text-white text-sm font-semibold truncate">{user?.name || 'User'}</div>
+            <div className="text-gray-500 text-xs capitalize">{user?.role}</div>
           </div>
         </div>
         <button

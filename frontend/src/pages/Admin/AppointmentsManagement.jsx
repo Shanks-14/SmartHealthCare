@@ -1,100 +1,60 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Layout from '../../components/layout/Layout';
 import Card from '../../components/common/Card';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
-import adminService from '../../services/adminService';
-import { statusClasses, typeClasses } from '../../utils/helpers';
-
-const DEMO = [
-  { id: 'APT-1001', patient: 'Sarah Murphy', doctor: "Dr. O'Brien", date: 'Mon 3 Mar', type: 'Video Call',  status: 'upcoming',  fee: '€65' },
-  { id: 'APT-1002', patient: 'Sarah Murphy', doctor: 'Dr. Walsh',   date: 'Thu 6 Mar', type: 'In-Person',   status: 'upcoming',  fee: '€90' },
-  { id: 'APT-1003', patient: 'James Foley',  doctor: "Dr. O'Brien", date: 'Mon 3 Mar', type: 'In-Person',   status: 'upcoming',  fee: '€65' },
-  { id: 'APT-0998', patient: 'Ciara Daly',   doctor: "Dr. O'Brien", date: 'Mon 3 Mar', type: 'In-Person',   status: 'completed', fee: '€65' },
-  { id: 'APT-0997', patient: 'Niamh Byrne',  doctor: 'Dr. Nolan',   date: 'Fri 7 Mar', type: 'Video Call',  status: 'cancelled', fee: '—'   },
-];
 
 const AppointmentsManagement = () => {
-  const [appointments, setAppointments] = useState([]);
-  const [loading,      setLoading]      = useState(true);
-  const [filter,       setFilter]       = useState('');
+  const appointments = [
+    { id: 'APT-1001', patient: 'Sarah Murphy', doctor: "Dr. O'Brien", date: 'Mon 3 Mar', type: 'Video', status: 'Upcoming', fee: '€65' },
+    { id: 'APT-1002', patient: 'Sarah Murphy', doctor: 'Dr. Walsh', date: 'Thu 6 Mar', type: 'In-Person', status: 'Upcoming', fee: '€90' },
+    { id: 'APT-1003', patient: 'James Foley', doctor: "Dr. O'Brien", date: 'Mon 3 Mar', type: 'In-Person', status: 'Upcoming', fee: '€65' },
+    { id: 'APT-0998', patient: 'Ciara Daly', doctor: "Dr. O'Brien", date: 'Mon 3 Mar', type: 'In-Person', status: 'Completed', fee: '€65' },
+    { id: 'APT-0997', patient: 'Niamh Byrne', doctor: 'Dr. Nolan', date: 'Fri 7 Mar', type: 'Video', status: 'Cancelled', fee: '—' },
+  ];
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const data = await adminService.getAllAppointments();
-        setAppointments(data?.length ? data : DEMO);
-      } catch {
-        setAppointments(DEMO);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
-  const filtered = appointments.filter((a) =>
-    !filter || (a.status || '').toLowerCase() === filter.toLowerCase()
-  );
-
-  if (loading) return <LoadingSpinner />;
+  const statusClass = (s) => {
+    if (s === 'Upcoming') return 'bg-teal-50 text-teal-600';
+    if (s === 'Completed') return 'bg-green-50 text-green-600';
+    return 'bg-red-50 text-red-600';
+  };
 
   return (
     <Layout title="All Appointments">
       <Card>
-        <div className="flex justify-between items-start mb-5 flex-wrap gap-3">
-          <div>
-            <h2 className="font-semibold">All Appointments ({appointments.length})</h2>
-            <p className="text-xs text-gray-400 mt-0.5">
-              GET /api/appointments · Azure SQL
-            </p>
-          </div>
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="px-3 py-2 text-sm border-2 border-gray-200 rounded-lg
-              focus:border-teal-500 outline-none bg-white"
-          >
-            <option value="">All statuses</option>
-            <option value="upcoming">Upcoming</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
+        <div className="mb-4">
+          <h2 className="font-semibold text-gray-900">All Appointments</h2>
+          <p className="text-xs text-gray-400 mt-1">GET /api/admin/appointments · Azure SQL</p>
         </div>
-
-        <div className="overflow-x-auto -mx-5 px-5">
-          <table className="w-full min-w-[680px]">
+        <div className="overflow-x-auto">
+          <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200">
-                {['ID','Patient','Doctor','Date','Type','Status','Fee'].map((h) => (
-                  <th key={h}
-                    className="text-left pb-3 pr-4 text-xs font-bold text-gray-400 uppercase">
-                    {h}
-                  </th>
-                ))}
+                <th className="text-left py-3 text-xs font-bold text-gray-400">ID</th>
+                <th className="text-left py-3 text-xs font-bold text-gray-400">Patient</th>
+                <th className="text-left py-3 text-xs font-bold text-gray-400">Doctor</th>
+                <th className="text-left py-3 text-xs font-bold text-gray-400">Date</th>
+                <th className="text-left py-3 text-xs font-bold text-gray-400">Type</th>
+                <th className="text-left py-3 text-xs font-bold text-gray-400">Status</th>
+                <th className="text-left py-3 text-xs font-bold text-gray-400">Fee</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((a, i) => (
-                <tr key={i}
-                  className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                  <td className="py-3 pr-4 text-xs font-mono text-gray-500">
-                    {a.id || a.appointment_code}
-                  </td>
-                  <td className="py-3 pr-4 text-sm font-medium">{a.patient}</td>
-                  <td className="py-3 pr-4 text-sm text-gray-500">{a.doctor}</td>
-                  <td className="py-3 pr-4 text-sm">{a.date}</td>
-                  <td className="py-3 pr-4">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold
-                      ${typeClasses(a.type)}`}>
-                      {a.type}
+              {appointments.map((apt, idx) => (
+                <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
+                  <td className="py-3 text-xs font-mono text-gray-500">{apt.id}</td>
+                  <td className="py-3 text-sm">{apt.patient}</td>
+                  <td className="py-3 text-sm">{apt.doctor}</td>
+                  <td className="py-3 text-sm">{apt.date}</td>
+                  <td className="py-3">
+                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${apt.type === 'Video' ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-600'}`}>
+                      {apt.type}
                     </span>
                   </td>
-                  <td className="py-3 pr-4">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold
-                      ${statusClasses(a.status)}`}>
-                      {a.status}
+                  <td className="py-3">
+                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${statusClass(apt.status)}`}>
+                      {apt.status}
                     </span>
                   </td>
-                  <td className="py-3 font-semibold text-sm">{a.fee}</td>
+                  <td className="py-3 font-semibold text-sm">{apt.fee}</td>
                 </tr>
               ))}
             </tbody>

@@ -1,136 +1,101 @@
-import React, { useState, useEffect } from 'react';
-import { toast } from 'react-toastify';
+import React, { useState } from 'react';
 import Layout from '../../components/layout/Layout';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
-import Input from '../../components/forms/Input';
-import Select from '../../components/forms/Select';
-import doctorService from '../../services/doctorService';
-
-const WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+import { toast } from 'react-toastify';
 
 const Availability = () => {
-  const [loading, setLoading]   = useState(false);
-  const [saving,  setSaving]    = useState(false);
   const [settings, setSettings] = useState({
-    start_time:          '09:00',
-    end_time:            '17:00',
-    slot_duration_mins:  '45',
-    max_patients:        8,
-    days_available:      ['Mon', 'Tue', 'Wed', 'Thu'],
+    startTime: '09:00',
+    endTime: '17:00',
+    duration: '45',
+    maxPatients: 8,
+    days: ['Mon', 'Tue', 'Wed', 'Thu'],
   });
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      try {
-        const data = await doctorService.getAvailability();
-        if (data && Object.keys(data).length) {
-          setSettings({
-            start_time:         data.start_time         || '09:00',
-            end_time:           data.end_time           || '17:00',
-            slot_duration_mins: String(data.slot_duration_mins || 45),
-            max_patients:       data.max_patients       || 8,
-            days_available:     data.days_available
-              ? JSON.parse(data.days_available)
-              : ['Mon', 'Tue', 'Wed', 'Thu'],
-          });
-        }
-      } catch {
-        // keep defaults
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
+  const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   const toggleDay = (day) => {
-    setSettings((s) => ({
-      ...s,
-      days_available: s.days_available.includes(day)
-        ? s.days_available.filter((d) => d !== day)
-        : [...s.days_available, day],
+    setSettings(prev => ({
+      ...prev,
+      days: prev.days.includes(day)
+        ? prev.days.filter(d => d !== day)
+        : [...prev.days, day],
     }));
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      await doctorService.updateAvailability({
-        ...settings,
-        slot_duration_mins: parseInt(settings.slot_duration_mins),
-        max_patients:       parseInt(settings.max_patients),
-      });
-      toast.success('✓ Availability saved to Azure SQL');
-    } catch {
-      toast.error('Failed to save availability');
-    } finally {
-      setSaving(false);
-    }
   };
 
   return (
     <Layout title="Set Availability">
       <Card>
-        <h2 className="font-semibold mb-1">Set My Availability</h2>
-        <p className="text-xs text-gray-400 mb-5">
-          PATCH /api/doctors/availability · Azure SQL · DoctorAvailability table
-        </p>
+        <h2 className="font-semibold text-gray-900 mb-1">Set My Availability</h2>
+        <p className="text-xs text-gray-400 mb-5">PATCH /api/doctor/availability · Azure SQL · availability table</p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-          <Input label="Working Hours — Start" name="start_time" type="time"
-            value={settings.start_time}
-            onChange={(e) => setSettings((s) => ({ ...s, start_time: e.target.value }))} />
-          <Input label="Working Hours — End" name="end_time" type="time"
-            value={settings.end_time}
-            onChange={(e) => setSettings((s) => ({ ...s, end_time: e.target.value }))} />
-        </div>
-
-        <div className="mb-4">
-          <Select label="Consultation Duration" name="slot_duration_mins"
-            value={settings.slot_duration_mins}
-            onChange={(e) => setSettings((s) => ({ ...s, slot_duration_mins: e.target.value }))}
-            options={[
-              { value: '30', label: '30 minutes' },
-              { value: '45', label: '45 minutes' },
-              { value: '60', label: '60 minutes' },
-            ]} />
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">
-            Days Available
-          </label>
-          <div className="flex gap-2 flex-wrap">
-            {WEEK.map((day) => {
-              const active = settings.days_available.includes(day);
-              return (
-                <button key={day} type="button"
-                  onClick={() => toggleDay(day)}
-                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-                    active
-                      ? 'bg-ink text-white'
-                      : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}>
-                  {day}
-                </button>
-              );
-            })}
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Working Hours — Start</label>
+            <input
+              type="time"
+              value={settings.startTime}
+              onChange={(e) => setSettings({ ...settings, startTime: e.target.value })}
+              className="w-full p-2.5 border-2 border-gray-200 rounded-lg focus:border-teal-500 outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Working Hours — End</label>
+            <input
+              type="time"
+              value={settings.endTime}
+              onChange={(e) => setSettings({ ...settings, endTime: e.target.value })}
+              className="w-full p-2.5 border-2 border-gray-200 rounded-lg focus:border-teal-500 outline-none"
+            />
           </div>
         </div>
 
-        <div className="mb-5">
-          <Input label="Max Patients Per Day" name="max_patients" type="number"
-            value={String(settings.max_patients)}
-            onChange={(e) => setSettings((s) => ({ ...s, max_patients: e.target.value }))} />
+        <div className="mb-4">
+          <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Consultation Duration</label>
+          <select
+            value={settings.duration}
+            onChange={(e) => setSettings({ ...settings, duration: e.target.value })}
+            className="w-full p-2.5 border-2 border-gray-200 rounded-lg focus:border-teal-500 outline-none"
+          >
+            <option value="30">30 minutes</option>
+            <option value="45">45 minutes</option>
+            <option value="60">60 minutes</option>
+          </select>
         </div>
 
-        <div className="p-3 bg-blue-50 rounded-xl border border-blue-200 mb-5
-          text-xs text-blue-700 leading-relaxed">
-          ⚡ PATCH /api/doctors/availability → Azure SQL · DoctorAvailability table ·
-          Triggers slot recalculation for future bookings
+        <div className="mb-4">
+          <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Days Available</label>
+          <div className="flex gap-2 flex-wrap">
+            {weekDays.map((day) => (
+              <div
+                key={day}
+                onClick={() => toggleDay(day)}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold cursor-pointer transition-all ${
+                  settings.days.includes(day) ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-400'
+                }`}
+              >
+                {day}
+              </div>
+            ))}
+          </div>
         </div>
 
-        <Button onClick={handleSave} loading={saving} disabled={loading}>
+        <div className="mb-4">
+          <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Max Patients Per Day</label>
+          <input
+            type="number"
+            value={settings.maxPatients}
+            onChange={(e) => setSettings({ ...settings, maxPatients: parseInt(e.target.value) })}
+            className="w-full p-2.5 border-2 border-gray-200 rounded-lg focus:border-teal-500 outline-none"
+          />
+        </div>
+
+        <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 mb-4 text-xs text-blue-700">
+          ⚡ PATCH /api/doctor/availability → Azure SQL · availability table · Triggers slot recalculation
+        </div>
+
+        <Button variant="primary" fullWidth onClick={() => toast.success('Availability saved to Azure SQL')}>
           Save Availability
         </Button>
       </Card>

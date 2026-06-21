@@ -17,35 +17,27 @@ const medicalRoutes = require('./routes/medicalRoutes');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// BUG FIX: Declare 'server' at module scope so SIGTERM handler can reference it
+// FIX: Declare server at module scope so SIGTERM handler can reference it
 let server;
 
 // MIDDLEWARE
-
-// Security headers
 app.use(helmet());
 
-// CORS configuration
 app.use(cors({
     origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'],
     credentials: true,
     optionsSuccessStatus: 200
 }));
 
-// Parse JSON and URL-encoded bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Request logging middleware
 app.use((req, res, next) => {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
     next();
 });
 
-
 // ROUTES
-
-// Health check endpoint
 app.get('/api/health', async (req, res) => {
     const dbHealth = await healthCheck();
     res.json({
@@ -57,14 +49,12 @@ app.get('/api/health', async (req, res) => {
     });
 });
 
-// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/patients', patientRoutes);
 app.use('/api/doctors', doctorRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/medical', medicalRoutes);
 
-// 404 handler for undefined routes
 app.use((req, res) => {
     res.status(404).json({
         error: 'Not Found',
@@ -72,7 +62,6 @@ app.use((req, res) => {
     });
 });
 
-// Global error handler
 app.use((err, req, res, next) => {
     console.error('Global error handler:', err);
     res.status(err.status || 500).json({
@@ -82,17 +71,13 @@ app.use((err, req, res, next) => {
     });
 });
 
-
 // START SERVER
-
 async function startServer() {
     try {
-        // Connect to database first
         await connectDB();
         console.log('✅ Database connection established');
 
-        // BUG FIX: Assign app.listen() result to module-scoped 'server' variable
-        // so it can be referenced in the SIGTERM handler below
+        // FIX: Assign result to module-scoped 'server' so SIGTERM handler works
         server = app.listen(PORT, () => {
             console.log('========================================');
             console.log('🚀 SmartCare API Server Started');
@@ -101,14 +86,14 @@ async function startServer() {
             console.log(`🕐 Started at: ${new Date().toISOString()}`);
             console.log('========================================');
             console.log('📋 Available Endpoints:');
-            console.log('   POST   /api/auth/register     - User registration');
-            console.log('   POST   /api/auth/login        - User login');
-            console.log('   GET    /api/auth/me           - Get current user');
-            console.log('   GET    /api/patients          - List all patients');
-            console.log('   GET    /api/doctors           - List all doctors');
-            console.log('   GET    /api/appointments      - Get appointments');
-            console.log('   POST   /api/appointments/book - Book appointment');
-            console.log('   GET    /api/health            - Health check');
+            console.log('   POST   /api/auth/register');
+            console.log('   POST   /api/auth/login');
+            console.log('   GET    /api/auth/me');
+            console.log('   GET    /api/patients');
+            console.log('   GET    /api/doctors');
+            console.log('   GET    /api/appointments');
+            console.log('   POST   /api/appointments/book');
+            console.log('   GET    /api/health');
             console.log('========================================');
         });
 
@@ -118,7 +103,7 @@ async function startServer() {
     }
 }
 
-// BUG FIX: 'server' is now defined at module scope, so this handler works correctly
+// FIX: 'server' is now defined at module scope — handler works correctly
 process.on('SIGTERM', () => {
     console.log('SIGTERM received, shutting down gracefully...');
     if (server) {
@@ -131,7 +116,6 @@ process.on('SIGTERM', () => {
     }
 });
 
-// Start the server
 startServer();
 
 module.exports = app;

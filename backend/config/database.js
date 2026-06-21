@@ -4,50 +4,36 @@
 const sql = require('mssql');
 require('dotenv').config();
 
-// DATABASE CONFIGURATION
-
 const dbConfig = {
-    // Azure SQL Database connection info
-    // BUG FIX: Removed hardcoded credential fallbacks — all values must come from .env
+    // FIX: All values from env only — no hardcoded credential fallbacks
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     server: process.env.DB_SERVER,
     database: process.env.DB_NAME,
     port: parseInt(process.env.DB_PORT) || 1433,
-
-    // Connection options required for Azure SQL
     options: {
         encrypt: true,
         trustServerCertificate: false,
         enableArithAbort: true,
-        connectTimeout: 30000,             // 30 seconds timeout
-        requestTimeout: 30000,             // 30 seconds timeout
+        connectTimeout: 30000,
+        requestTimeout: 30000,
         rowCollectionOnRequestCompletion: false
     },
-
-    // Connection pool settings
     pool: {
-        max: 10,                          // Maximum number of connections
-        min: 0,                           // Minimum number of connections
-        idleTimeoutMillis: 30000,         // Closing idle connections after 30 seconds
-        acquireTimeoutMillis: 30000,       // Timeout connection
-        evictionRunIntervalMillis: 10000  // Checking for idle connections every 10 seconds
+        max: 10,
+        min: 0,
+        idleTimeoutMillis: 30000,
+        acquireTimeoutMillis: 30000,
+        evictionRunIntervalMillis: 10000
     }
 };
-
-
-// CONNECTION POOL MANAGEMENT
 
 let pool = null;
 let connectionAttempts = 0;
 const MAX_RETRY_ATTEMPTS = 3;
 
-/*
- * Connect to Azure SQL Database
- * Creates a connection pool and manages reconnection logic
- */
 async function connectDB() {
-    // BUG FIX: Validate required env vars before attempting connection
+    // FIX: Validate required env vars before attempting connection
     const required = ['DB_USER', 'DB_PASSWORD', 'DB_SERVER', 'DB_NAME'];
     const missing = required.filter(key => !process.env[key]);
     if (missing.length > 0) {
@@ -58,23 +44,21 @@ async function connectDB() {
         console.log('========================================');
         console.log('🚀 Connecting to Azure SQL Database...');
         console.log(`📡 Server: ${dbConfig.server}`);
-        console.log(`🗄️ Database: ${dbConfig.database}`);
+        console.log(`🗄️  Database: ${dbConfig.database}`);
         console.log(`👤 User: ${dbConfig.user}`);
         console.log('========================================');
 
-        // Creating connection pool
         pool = await sql.connect(dbConfig);
 
         console.log('✅ Connected to Azure SQL Database successfully!');
-        console.log('📊 Connection pool created');
         console.log(`   Max connections: ${dbConfig.pool.max}`);
-        console.log(`   Idle timeout: ${dbConfig.pool.idleTimeoutMillis / 1000} seconds`);
+        console.log(`   Idle timeout: ${dbConfig.pool.idleTimeoutMillis / 1000}s`);
         console.log('========================================');
 
-        connectionAttempts = 0; // Reset attempts on successful connection
+        connectionAttempts = 0;
 
-        // Testing connection with a simple query
-        const testResult = await pool.request().query('SELECT GETUTCDATE() AS ServerTime, @@VERSION AS SQLVersion');
+        const testResult = await pool.request()
+            .query('SELECT GETUTCDATE() AS ServerTime, @@VERSION AS SQLVersion');
         console.log(`🕐 Server time: ${testResult.recordset[0].ServerTime}`);
         console.log('========================================');
 
@@ -96,10 +80,6 @@ async function connectDB() {
     }
 }
 
-/*
- * Get the database connection pool
- * @returns {Object} SQL connection pool
- */
 function getPool() {
     if (!pool) {
         throw new Error('Database not connected. Call connectDB() first.');
@@ -107,17 +87,10 @@ function getPool() {
     return pool;
 }
 
-/*
- * Check if database is connected
- * @returns {boolean} True if connected, false otherwise
- */
 function isConnected() {
     return pool !== null;
 }
 
-/*
- * Close database connection
- */
 async function closeDB() {
     if (pool) {
         try {
@@ -130,64 +103,40 @@ async function closeDB() {
     }
 }
 
-
-// HELPER FUNCTIONS FOR COMMON OPERATIONS
-
-/*
- * Execute a query with parameters
- * @param {string} query - SQL query
- * @param {Array} params - Query parameters
- * @returns {Promise<Object>} Query result
- */
 async function executeQuery(query, params = []) {
-    // BUG FIX: Renamed local variable from 'pool' to 'dbPool' to avoid shadowing
-    // the module-level 'pool' variable
+    // FIX: Renamed local variable to 'dbPool' to avoid shadowing module-level 'pool'
     const dbPool = getPool();
     const request = dbPool.request();
 
-    // Add parameters to request
     params.forEach((param, index) => {
         request.input(`param${index}`, param.value);
     });
 
     try {
-        const result = await request.query(query);
-        return result;
+        return await request.query(query);
     } catch (err) {
         console.error('Query execution failed:', err);
         throw err;
     }
 }
 
-/*
- * Execute a stored procedure
- * @param {string} procedureName - Name of stored procedure
- * @param {Array} params - Procedure parameters
- * @returns {Promise<Object>} Procedure result
- */
 async function executeProcedure(procedureName, params = []) {
-    // BUG FIX: Renamed local variable from 'pool' to 'dbPool' to avoid shadowing
+    // FIX: Renamed local variable to 'dbPool' to avoid shadowing module-level 'pool'
     const dbPool = getPool();
     const request = dbPool.request();
 
-    // Add parameters to request
     params.forEach((param) => {
         request.input(param.name, param.type, param.value);
     });
 
     try {
-        const result = await request.execute(procedureName);
-        return result;
+        return await request.execute(procedureName);
     } catch (err) {
         console.error(`Procedure ${procedureName} execution failed:`, err);
         throw err;
     }
 }
 
-/*
- * Begin a transaction
- * @returns {Promise<Object>} Transaction object
- */
 async function beginTransaction() {
     const dbPool = getPool();
     const transaction = dbPool.transaction();
@@ -195,44 +144,28 @@ async function beginTransaction() {
     return transaction;
 }
 
-
-// DATABASE HEALTH CHECK
-
-/*
- * Check database health and performance
- */
 async function healthCheck() {
     if (!pool) {
         return { status: 'disconnected', message: 'Database connection pool not initialized' };
     }
-
     try {
-        const result = await pool.request().query('SELECT GETUTCDATE() AS current_time, 1 AS test');
-
+        const result = await pool.request()
+            .query('SELECT GETUTCDATE() AS current_time, 1 AS test');
         const poolStats = {
             active: pool.connected,
             totalConnections: pool.pool ? pool.pool.size : 0,
             availableConnections: pool.pool ? pool.pool.available : 0
         };
-
         return {
             status: 'healthy',
             serverTime: result.recordset[0].current_time,
-            poolStats: poolStats,
+            poolStats,
             timestamp: new Date().toISOString()
         };
-
     } catch (err) {
-        return {
-            status: 'unhealthy',
-            error: err.message,
-            timestamp: new Date().toISOString()
-        };
+        return { status: 'unhealthy', error: err.message, timestamp: new Date().toISOString() };
     }
 }
-
-
-// ERROR HANDLING FOR DATABASE CONNECTION
 
 process.on('SIGINT', async () => {
     console.log('\n🛑 Received SIGINT. Closing database connection...');
@@ -258,18 +191,8 @@ process.on('unhandledRejection', async (reason, promise) => {
     process.exit(1);
 });
 
-
-// EXPORT MODULES
-
 module.exports = {
-    connectDB,
-    getPool,
-    closeDB,
-    isConnected,
-    executeQuery,
-    executeProcedure,
-    beginTransaction,
-    healthCheck,
-    sql,
-    dbConfig
+    connectDB, getPool, closeDB, isConnected,
+    executeQuery, executeProcedure, beginTransaction,
+    healthCheck, sql, dbConfig
 };
